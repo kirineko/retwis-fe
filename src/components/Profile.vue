@@ -4,9 +4,9 @@
         <h2> {{ username }}</h2>
 
         <div class="box" v-if="username != loginname">
-            <a v-if="!isfollowing" :href="`/${ loginname }/follow/${ username }`">Following</a>
-            <a v-else :href="`/${ loginname }/unfollow/${ username }`">Stop Following</a>
-            | <a :href="`/mentions/${ username }`">See Mentions</a>
+            <a v-if="!isfollowing" @click="follow">Following</a>
+            <a v-else @click="unfollow">Stop Following</a>
+            | <router-link :to="`/mentions/${ username }`">See Mentions</router-link>
         </div>
 
         <div id="posts" class="span-15">
@@ -29,29 +29,80 @@
 <script>
 import Post from './Post'
 import UserList from './UserList'
+import {mapGetters} from 'vuex'
+import axios from '../axios-auth'
 
 export default {
   data() {
     return {
-      username: 'liyi',
-      loginname: 'tester',
+      username: '',
       isfollowing: false,
-      posts: [
-        {id: 1, username: 'liyi', content: 'hello world', posttime: new Date()}
-      ],
-      followers_num: 1,
-      following_num: 1,
-      followers: [
-        {id: 1, username: 'liyi'}
-      ],
-      following: [
-        {id: 2, username: 'tester'}
-      ]
+      posts: [],
+      followers_num: 0,
+      following_num: 0,
+      followers: [],
+      following: []
     }
   },
   components: {
     appPost: Post,
     appUserList: UserList
+  },
+
+  computed: {
+    ...mapGetters({
+      loginname: 'username',
+      token: 'token'
+    })
+  },
+
+  watch: {
+    '$route': 'fetchData'
+  },
+
+  methods: {
+    fetchData() {
+      this.username = this.$route.params.username
+      axios.get(`/${this.username}?auth=${this.token}`)
+      .then(res => {
+        const result = res.data
+        this.isfollowing = result.isfollowing
+        this.followers = result.followers
+        this.following = result.following
+        this.followers_num = result.followers_num
+        this.following_num = result.following_num
+        this.posts = result.posts
+      })
+      .catch(error => console.log(error))
+    },
+
+    follow() {
+      axios.get(`/${this.loginname}/follow/${this.username}?auth=${this.token}`)
+      .then(res=>{
+        console.log(res.data)
+        this.isfollowing = true
+        this.followers.unshift({username: this.loginname})
+        this.followers_num += 1
+      })
+      .catch(error => console.log(error))
+    },
+
+    unfollow() {
+      axios.get(`/${this.loginname}/unfollow/${this.username}?auth=${this.token}`)
+      .then(res=>{
+        console.log(res.data)
+        this.isfollowing = false
+        this.followers.splice(this.following.findIndex((element) => {
+          element.username == this.loginname
+        }), 1)
+        this.followers_num -= 1
+      })
+      .catch(error => console.log(error))
+    }
+  },
+
+  created() {
+    this.fetchData()
   }
 }
 </script>

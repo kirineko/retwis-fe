@@ -23,21 +23,40 @@
 <script>
 import Post from './Post'
 import UserList from './UserList'
+import {mapGetters} from 'vuex'
+import axios from '../axios-auth'
 
 export default {
   data() {
     return {
-      posts: [
-        {id: 1, username: 'liyi', content: 'hello world', posttime: new Date()}
-      ],
-      users: [
-        {id: 2, username: 'tester'}
-      ]
+      posts: [],
+      users: []
     }
   },
   components: {
     appPost: Post,
     appUserList: UserList
+  },
+
+  computed: {
+    ...mapGetters({
+      token: 'token'
+    })
+  },
+
+  methods: {
+    fetchData() {
+      axios.get(`/timeline?auth=${this.token}`)
+      .then(res => {
+        this.posts = res.data.posts
+        this.users = res.data.users
+      })
+      .catch(error => console.log(error))
+    }
+  },
+
+  created() {
+    this.fetchData()
   }
 }
 </script>

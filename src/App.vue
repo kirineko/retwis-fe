@@ -14,6 +14,10 @@ export default {
   components: {
     appHeader: Header,
     appFooter: Footer
+  },
+  async beforeCreate () {
+    await this.$store.dispatch('tryAutoLogin')
+    this.$router.go(-1)
   }
 }
 </script>
